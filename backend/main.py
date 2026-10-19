@@ -6,7 +6,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import get_db, init_db
 from managers import PeliculaManager
-from models import GENEROS, Genero, Pelicula, PeliculaCreate, PeliculaUpdate
+from models import Pelicula, PeliculaCreate, PeliculaUpdate
+
+GENEROS = [
+    "Acción", "Animación", "Aventura", "Comedia", "Crimen",
+    "Drama", "Fantasía", "Romance", "Terror", "Ciencia ficción",
+]
 
 
 @asynccontextmanager
@@ -47,7 +52,7 @@ def listar_generos():
 @app.get("/peliculas", response_model=list[Pelicula])
 def listar_peliculas(
     q: str | None = Query(None, max_length=100, description="Texto contenido en título o director"),
-    genero: Genero | None = Query(None, description="Género exacto"),
+    genero: str | None = Query(None, description="Género exacto"),
     anio_min: int | None = Query(None, ge=1888, description="Año de estreno desde"),
     anio_max: int | None = Query(None, ge=1888, description="Año de estreno hasta"),
     calificacion_min: float | None = Query(None, ge=0, le=10, description="Calificación mínima"),

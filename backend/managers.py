@@ -3,10 +3,6 @@ import sqlite3
 from models import Pelicula, PeliculaCreate, PeliculaUpdate
 
 
-def _escapar_like(texto: str) -> str:
-    return texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-
-
 class PeliculaManager:
     _COLUMNAS = (
         "titulo", "director", "genero", "anio",
@@ -14,12 +10,12 @@ class PeliculaManager:
     )
 
     def __init__(self, conn: sqlite3.Connection):
-        self._conn = conn   
+        self._conn = conn
 
     @staticmethod
     def _a_modelo(fila: sqlite3.Row) -> Pelicula:
         datos = dict(fila)
-        datos["vista"] = bool(datos["vista"])   
+        datos["vista"] = bool(datos["vista"])
         return Pelicula(**datos)
 
     def get_all(
@@ -31,33 +27,30 @@ class PeliculaManager:
         calificacion_min: float | None = None,
         vista: bool | None = None,
     ) -> list[Pelicula]:
-        condiciones: list[str] = []
-        parametros: list = []   
+        sql = "SELECT * FROM peliculas WHERE 1 = 1"
+        parametros: list = []
 
         if q:
-            patron = f"%{_escapar_like(q)}%"
-            condiciones.append("(titulo LIKE ? ESCAPE '\\' OR director LIKE ? ESCAPE '\\')")
+            sql += " AND (titulo LIKE ? OR director LIKE ?)"
+            patron = f"%{q}%"
             parametros += [patron, patron]
         if genero:
-            condiciones.append("genero = ?")
+            sql += " AND genero = ?"
             parametros.append(genero)
         if anio_min is not None:
-            condiciones.append("anio >= ?")
+            sql += " AND anio >= ?"
             parametros.append(anio_min)
         if anio_max is not None:
-            condiciones.append("anio <= ?")
+            sql += " AND anio <= ?"
             parametros.append(anio_max)
         if calificacion_min is not None:
-            condiciones.append("calificacion >= ?")
+            sql += " AND calificacion >= ?"
             parametros.append(calificacion_min)
         if vista is not None:
-            condiciones.append("vista = ?")
+            sql += " AND vista = ?"
             parametros.append(int(vista))
 
-        sql = "SELECT * FROM peliculas"
-        if condiciones:
-            sql += " WHERE " + " AND ".join(condiciones)
-        sql += " ORDER BY titulo COLLATE NOCASE"
+        sql += " ORDER BY titulo"
 
         filas = self._conn.execute(sql, parametros).fetchall()
         return [self._a_modelo(f) for f in filas]
@@ -68,11 +61,13 @@ class PeliculaManager:
 
     def create(self, data: PeliculaCreate) -> Pelicula:
         valores = data.model_dump()
-        columnas = ", ".join(self._COLUMNAS)
-        marcadores = ", ".join("?" for _ in self._COLUMNAS)
         cursor = self._conn.execute(
-            f"INSERT INTO peliculas ({columnas}) VALUES ({marcadores})",
-            [valores[c] for c in self._COLUMNAS],
+            """INSERT INTO peliculas (titulo, director, genero, anio, duracion_min, calificacion, vista, sinopsis)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                valores["titulo"], valores["director"], valores["genero"], valores["anio"],
+                valores["duracion_min"], valores["calificacion"], int(valores["vista"]), valores["sinopsis"],
+            ),
         )
         self._conn.commit()
         return self.get_by_id(cursor.lastrowid)
@@ -82,17 +77,16 @@ class PeliculaManager:
         if actual is None:
             return None
 
-        
         cambios = data.model_dump(exclude_unset=True)
         if not cambios:
             return actual
 
-         
         columnas = [c for c in cambios if c in self._COLUMNAS]
         asignaciones = ", ".join(f"{c} = ?" for c in columnas)
+        valores = [cambios[c] for c in columnas]
         self._conn.execute(
             f"UPDATE peliculas SET {asignaciones} WHERE id = ?",
-            [cambios[c] for c in columnas] + [id],
+            valores + [id],
         )
         self._conn.commit()
         return self.get_by_id(id)
