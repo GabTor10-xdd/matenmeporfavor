@@ -425,4 +425,4 @@ Cada error indica **dónde** (`loc`) y **qué** pasó (`msg`). El frontend usa `
 - **Estados de la interfaz:** carga (indicador y botón deshabilitado), lista vacía, error de red con botón «Reintentar», guardando y confirmación antes de borrar (con `<dialog>`).
 - **Scripts clásicos y no módulos ES**, para que el frontend funcione también si se abre con Live Server o un servidor estático cualquiera.
 - **SQLite con `check_same_thread=False`**, porque FastAPI puede abrir y cerrar la conexión en hilos distintos; cada request tiene su propia conexión, así que no se comparte entre requests.
-- **Diseño visual:** cada película se muestra como una entrada de cine (talón ámbar con la calificación y cuerpo con los datos), con tipografía serif para los títulos, contraste alto, foco visible y adaptación a pantallas chicas.
+- **Diseño visual:** cada película se muestra como una entrada de cine (talón ámbar con la calificación y cuerpo con los datos), con tipografía serif para los títulos, contraste alto, foco visible y adaptación a pantallas chicas.s
