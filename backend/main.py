@@ -29,7 +29,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # en producción: el origen específico del frontend
+    allow_origins=[
+        "http://localhost:5500",   # python -m http.server / Live Server
+        "http://127.0.0.1:5500",  # Live Server suele abrir con esta IP
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
